@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Class Activities - Dogs</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/annyang/2.6.1/annyang.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/simple-slider@1.0.1/dist/simpleslider.min.js"></script>
+  </head>
+  <body>
+    <nav>
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="stocks.html">Stocks</a></li>
+        <li><a href="dogs.html">Dogs</a></li>
+      </ul>
+    </nav>
+
+    <main>
+      <h1>Dogs Page</h1>
+      <div
+        id="dog-carousel"
+        style="width: 100%; padding-bottom: 25%"
+        data-simple-slider
+      ></div>
+
+      <h2>Dog Breeds</h2>
+      <div id="breedButtons"></div>
+      <div id="breedInfo" style="display: none"></div>
+    </main>
+
+    <section id="audio-controls" class="audio-box">
+      <h2>Voice Commands</h2>
+      <p>
+        Say "Hello" - Alerts 'Hello World'<br />
+        Say "Change the color to red/blue/etc" - Changes background<br />
+        Say "Navigate to home/stocks/dogs" - Navigates to selected page<br />
+        Say "Load Dog Breed BREED" - Shows info for selected breed
+      </p>
+      <button onclick="startVoice()">Turn On Audio</button>
+      <button onclick="stopVoice()">Turn Off Audio</button>
+    </section>
+
+    <script>
+      async function loadCarousel() {
+        const res = await fetch("https://dog.ceo/api/breeds/image/random/10");
+        const data = await res.json();
+        const container = document.getElementById("dog-carousel");
+        container.innerHTML = "";
+
+        data.message.forEach((url) => {
+          const img = document.createElement("img");
+          img.src = url;
+          img.style.width = "100%";
+          img.style.height = "auto";
+          container.appendChild(img);
+        });
+
+        simpleslider.getSlider();
+      }
+
+      async function loadBreeds() {
+        const res = await fetch("https://api.thedogapi.com/v1/breeds");
+        const breeds = await res.json();
+        const container = document.getElementById("breedButtons");
+
+        breeds.forEach((breed) => {
+          const btn = document.createElement("button");
+          btn.textContent = breed.name;
+          btn.className = "custom-button";
+          btn.setAttribute("data-id", breed.id);
+          btn.onclick = () => showBreedInfo(breed);
+          container.appendChild(btn);
+        });
+      }
+
+      function showBreedInfo(breed) {
+        const info = document.getElementById("breedInfo");
+        info.style.display = "block";
+        info.innerHTML = `
+        <h3>${breed.name}</h3>
+        <p><strong>Description:</strong> ${breed.bred_for || "N/A"}</p>
+        <p><strong>Life Span:</strong> ${breed.life_span}</p>
+      `;
+      }
+
+      function startVoice() {
+        if (annyang) {
+          const commands = {
+            hello: () => alert("Hello World"),
+            "change the color to *color": (color) =>
+              (document.body.style.background = color),
+            "navigate to *page": (page) =>
+              (window.location.href = `${page.toLowerCase()}.html`),
+            "load dog breed *breed": (breed) => findBreed(breed),
+          };
+          annyang.addCommands(commands);
+          annyang.start();
+        }
+      }
+
+      function stopVoice() {
+        if (annyang) annyang.abort();
+      }
+
+      async function findBreed(breedName) {
+        const res = await fetch("https://api.thedogapi.com/v1/breeds");
+        const breeds = await res.json();
+        const breed = breeds.find(
+          (b) => b.name.toLowerCase() === breedName.toLowerCase()
+        );
+        if (breed) showBreedInfo(breed);
+      }
+
+      loadCarousel();
+      loadBreeds();
+    </script>
+  </body>
+</html>
+
