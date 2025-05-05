@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Class Activities - Home</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/annyang/2.6.1/annyang.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body>
+    <nav>
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="stocks.html">Stocks</a></li>
+        <li><a href="dogs.html">Dogs</a></li>
+      </ul>
+    </nav>
+
+    <main>
+      <h1>Welcome to the Class Activities Site</h1>
+      <button class="custom-button" onclick="location.href='stocks.html'">
+        Go to Stocks
+      </button>
+      <button class="custom-button" onclick="location.href='dogs.html'">
+        Go to Dogs
+      </button>
+      <div id="quote"></div>
+    </main>
+
+    <section id="audio-controls" class="audio-box">
+      <h2>Voice Commands</h2>
+      <p>
+        Say "Hello" - Alerts 'Hello World'<br />
+        Say "Change the color to red/blue/etc" - Changes background<br />
+        Say "Navigate to home/stocks/dogs" - Navigates to selected page
+      </p>
+      <button onclick="startVoice()">Turn On Audio</button>
+      <button onclick="stopVoice()">Turn Off Audio</button>
+    </section>
+
+    <script>
+      function fetchQuote() {
+        fetch("https://zenquotes.io/api/random")
+          .then((res) => res.json())
+          .then((data) => {
+            document.getElementById("quote").textContent =
+              data[0].q + " - " + data[0].a;
+          });
+      }
+
+      function startVoice() {
+        if (annyang) {
+          const commands = {
+            hello: () => alert("Hello World"),
+            "change the color to *color": (color) =>
+              (document.body.style.background = color),
+            "navigate to *page": (page) =>
+              (window.location.href = `${page.toLowerCase()}.html`),
+          };
+          annyang.addCommands(commands);
+          annyang.start();
+        }
+      }
+
+      function stopVoice() {
+        if (annyang) annyang.abort();
+      }
+
+      fetchQuote();
+    </script>
+  </body>
+</html>

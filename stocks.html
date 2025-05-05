@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Class Activities - Stocks</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/annyang/2.6.1/annyang.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body>
+    <nav>
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="stocks.html">Stocks</a></li>
+        <li><a href="dogs.html">Dogs</a></li>
+      </ul>
+    </nav>
+
+    <main>
+      <h1>Stocks Page</h1>
+      <input type="text" id="ticker" placeholder="Enter stock ticker" />
+      <select id="days">
+        <option value="30">30 Days</option>
+        <option value="60">60 Days</option>
+        <option value="90">90 Days</option>
+      </select>
+      <button class="custom-button" onclick="loadStockChart()">
+        Show Chart
+      </button>
+      <canvas id="stockChart" width="400" height="200"></canvas>
+
+      <h2>Top 5 Reddit Stocks</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Ticker</th>
+            <th>Comments</th>
+            <th>Sentiment</th>
+          </tr>
+        </thead>
+        <tbody id="redditStocks"></tbody>
+      </table>
+    </main>
+
+    <section id="audio-controls" class="audio-box">
+      <h2>Voice Commands</h2>
+      <p>
+        Say "Hello" - Alerts 'Hello World'<br />
+        Say "Change the color to red/blue/etc" - Changes background<br />
+        Say "Navigate to home/stocks/dogs" - Navigates to selected page<br />
+        Say "Lookup TICKER" - Loads stock chart for TICKER with 30-day range
+      </p>
+      <button onclick="startVoice()">Turn On Audio</button>
+      <button onclick="stopVoice()">Turn Off Audio</button>
+    </section>
+
+    <script>
+      let chart;
+
+      function loadStockChart(ticker = null) {
+        const symbol = ticker || document.getElementById("ticker").value;
+        const days = document.getElementById("days").value;
+        const apiKey = "Sleog1ApevR0eUh7HPuwJMpfJeLwWFtQ";
+        const endDate = new Date().toISOString().split("T")[0];
+        const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
+          .toISOString()
+          .split("T")[0];
+
+        fetch(
+          `https://api.polygon.io/v2/aggs/ticker/${symbol.toUpperCase()}/range/1/day/${startDate}/${endDate}?adjusted=true&sort=asc&apiKey=${apiKey}`
+        )
+          .then((res) => res.json())
+          .then((data) => {
+            const labels = data.results.map((d) =>
+              new Date(d.t).toLocaleDateString()
+            );
+            const values = data.results.map((d) => d.c);
+
+            if (chart) chart.destroy();
+
+            const ctx = document.getElementById("stockChart").getContext("2d");
+            chart = new Chart(ctx, {
+              type: "line",
+              data: {
+                labels,
+                datasets: [
+                  {
+                    label: `${symbol.toUpperCase()} Closing Prices`,
+                    data: values,
+                    fill: false,
+                    borderColor: "blue",
+                  },
+                ],
+              },
+            });
+          });
+      }
+
+      function loadRedditStocks() {
+        fetch("https://tradestie.com/api/v1/apps/reddit?date=2022-04-03")
+          .then((res) => res.json())
+          .then((data) => {
+            const top5 = data.slice(0, 5);
+            const tbody = document.getElementById("redditStocks");
+            tbody.innerHTML = "";
+            top5.forEach((stock) => {
+              const row = document.createElement("tr");
+              row.innerHTML = `
+              <td><a href="https://finance.yahoo.com/quote/${
+                stock.ticker
+              }" target="_blank">${stock.ticker}</a></td>
+              <td>${stock.no_of_comments}</td>
+              <td>
+  <img src="assets/${
+    stock.sentiment === "Bullish" ? "bullybull.webp" : "yogibear.png"
+  }" alt="${stock.sentiment}" class="sentiment-icon">
+</td>
+            `;
+              tbody.appendChild(row);
+            });
+          });
+      }
+
+      function startVoice() {
+        if (annyang) {
+          const commands = {
+            hello: () => alert("Hello World"),
+            "change the color to *color": (color) =>
+              (document.body.style.background = color),
+            "navigate to *page": (page) =>
+              (window.location.href = `${page.toLowerCase()}.html`),
+            "lookup *ticker": (ticker) => loadStockChart(ticker.toUpperCase()),
+          };
+          annyang.addCommands(commands);
+          annyang.start();
+        }
+      }
+
+      function stopVoice() {
+        if (annyang) annyang.abort();
+      }
+
+      loadRedditStocks();
+    </script>
+  </body>
+</html>
